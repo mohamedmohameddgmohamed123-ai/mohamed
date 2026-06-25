@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الإدارة - نظام العُهد الاحترافي</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 { color: #89b4fa; }
+        .card {
+            background-color: #313244;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        input, select {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #45475a;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #a6e3a1;
+            color: #11111b;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #94e2d5; }
+        .btn-danger { background-color: #f38ba8; color: #11111b; }
+        .btn-danger:hover { background-color: #eba0ac; }
+        .btn-action { background-color: #fab387; color: #11111b; }
+        .btn-action:hover { background-color: #f9e2af; }
+        .btn-info { background-color: #89b4fa; color: #11111b; }
+        .btn-info:hover { background-color: #b4befe; }
+        .btn-excel { background-color: #a6e3a1; color: #11111b; margin-top: 10px; }
+        
+        .btn-notif-delete {
+            padding: 4px 8px;
+            font-size: 12px;
+            background-color: #f38ba8;
+            color: #11111b;
+            border-radius: 4px;
+            float: left;
+            margin-top: -5px;
+        }
+        
+        .notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .notif-header h2 { margin: 0; }
+
+        /* تصميم كروت الموظفين */
+        .employees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .emp-card {
+            background-color: #45475a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #585b70;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+        .emp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #585b70;
+            padding-bottom: 5px;
+        }
+        .emp-name { font-size: 20px; font-weight: bold; }
+        
+        /* مؤشر الحالة الدائري */
+        .status-badge {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-active { background-color: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
+        .status-empty { background-color: #f38ba8; box-shadow: 0 0 8px #f38ba8; }
+
+        .emp-budget { font-size: 18px; }
+        .topup-section { display: flex; gap: 5px; margin-top: 5px; }
+        .topup-section input { width: 90px; flex: none; min-width: unset; }
+        
+        .notification-item {
+            background-color: #45475a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-right: 5px solid #f38ba8;
+            overflow: hidden;
+        }
+        .notif-alert { border-right-color: #fab387; }
+
+        /* النافذة المنبثقة */
+        .modal {
+            display: none; 
+            position: fixed; z-index: 1000; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.6); 
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #313244; padding: 25px; 
+            border-radius: 8px; width: 85%; max-width: 750px;
+            max-height: 80vh; overflow-y: auto;
+        }
+        .close-modal { float: left; cursor: pointer; font-size: 24px; color: #f38ba8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; text-align: right; border-bottom: 1px solid #45475a; }
+        th { background-color: #45475a; color: #89b4fa; }
+        
+        .total-row { background-color: #45475a; font-weight: bold; font-size: 18px; }
+        .total-amount { color: #a6e3a1; }
+        
+        .search-box {
+            background-color: #1e1e2e;
+            border: 1px solid #89b4fa;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>لوحة تحكم الشركة 🏢</h1>
+    
+    <!-- قسم إضافة الموظفين -->
+    <div class="card">
+        <h2>إضافة موظف جديد</h2>
+        <div class="form-group">
+            <input type="text" id="empName" placeholder="اسم الموظف">
+            <input type="text" id="empPass" placeholder="كلمة المرور">
+            <input type="number" id="empBudget" placeholder="قيمة العُهدة المبدئية">
+            <button onclick="addEmployee()">إضافة الموظف</button>
+        </div>
+    </div>
+
+    <!-- قسم الإشعارات الواردة -->
+    <div class="card">
+        <div class="notif-header">
+            <h2>الإشعارات والطلبات الواردة 🔔</h2>
+            <button class="btn-danger" style="padding: 6px 12px; font-size: 14px;" onclick="clearAllNotifications()">مسح جميع الإشعارات</button>
+        </div>
+        <div id="notificationsList"></div>
+    </div>
+
+    <!-- قسم عرض كروت الموظفين -->
+    <div class="card">
+        <h2>إدارة الموظفين والعُهد</h2>
+        <!-- شريط البحث المطور -->
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 ابحث عن موظف بالاسم هنا..." oninput="renderData()">
+        
+        <div class="employees-grid" id="employeesContainer"></div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لعرض سجل الصرف -->
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h3 id="modalTitle">سجل صرف الموظف</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>التصنيف</th>
+                    <th>البيان / السبب</th>
+                    <th>المبلغ المصروف</th>
+                    <th>التاريخ والوقت</th>
+                </tr>
+            </thead>
+            <tbody id="modalTableBody"></tbody>
+            <tfoot id="modalTableFoot"></tfoot>
+        </table>
+        <button id="excelBtn" class="btn-excel">📥 تحميل السجل كملف Excel</button>
+    </div>
+</div>
+
+<script>
+    let employees = JSON.parse(localStorage.getItem('employees')) || [];
+    let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
+    let activeModalIndex = null;
+
+    function renderData() {
+        const container = document.getElementById('employeesContainer');
+        const searchQuery = document.getElementById('searchBar').value.toLowerCase().trim();
+        container.innerHTML = '';
+        
+        // فلترة الموظفين بناءً على البحث
+        const filteredEmployees = employees.filter(emp => emp.name.toLowerCase().includes(searchQuery));
+
+        if (filteredEmployees.length === 0) {
+            container.innerHTML = '<p>لا يوجد موظفين يطابقون البحث.</p>';
+        }
+
+        filteredEmployees.forEach((emp) => {
+            // تحديد الـ index الحقيقي في المصفوفة الأساسية
+            let originalIndex = employees.findIndex(e => e.name === emp.name);
+            let isBudgetOk = emp.budget > 0;
+            let budgetColor = isBudgetOk ? '#a6e3a1' : '#f38ba8';
+            let statusClass = isBudgetOk ? 'status-active' : 'status-empty';
+
+            container.innerHTML += `
+                <div class="emp-card">
+                    <div class="emp-header">
+                        <div class="emp-name">${emp.name}</div>
+                        <span class="status-badge ${statusClass}" title="${isBudgetOk ? 'رصيد متاح' : 'الرصيد منتهي'}"></span>
+                    </div>
+                    <div class="emp-budget">الرصيد: <span style="color: ${budgetColor}; font-weight:bold;">${emp.budget} نقطة</span></div>
+                    
+                    <div class="topup-section">
+                        <input type="number" id="topup-${originalIndex}" placeholder="المبلغ">
+                        <button class="btn-action" onclick="topupBudget(${originalIndex})">زيادة الرصيد</button>
+                    </div>
+                    
+                    <button class="btn-info" onclick="viewExpenses(${originalIndex})">👁️ عرض سجل الصرف</button>
+                    <button class="btn-danger" onclick="deleteEmployee(${originalIndex})">حذف الموظف</button>
+                </div>
+            `;
+        });
+
+        // عرض الإشعارات
+        const notifList = document.getElementById('notificationsList');
+        notifList.innerHTML = notifications.length === 0 ? '<p>لا توجد إشعارات جديدة حالياً.</p>' : '';
+        notifications.forEach((notif, index) => {
+            let alertClass = notif.type === 'overdraft' ? 'notif-alert' : '';
+            notifList.innerHTML += `
+                <div class="notification-item ${alertClass}">
+                    <button class="btn-notif-delete" onclick="deleteNotification(${index})">حذف 🗑️</button>
+                    ${notif.text} <br><small>الوقت: ${notif.time}</small>
+                </div>
+            `;
+        });
+    }
+
+    function addEmployee() {
+        const name = document.getElementById('empName').value.trim();
+        const pass = document.getElementById('empPass').value.trim();
+        const budget = parseFloat(document.getElementById('empBudget').value);
+
+        if (!name || !pass || isNaN(budget)) {
+            alert('برجاء ملء جميع الحقول بشكل صحيح');
+            return;
+        }
+
+        if (employees.some(e => e.name === name)) {
+            alert('هذا الموظف مضاف بالفعل!');
+            return;
+        }
+
+        employees.push({ name, pass, budget, expenses: [] });
+        localStorage.setItem('employees', JSON.stringify(employees));
+        
+        document.getElementById('empName').value = '';
+        document.getElementById('empPass').value = '';
+        document.getElementById('empBudget').value = '';
+        renderData();
+    }
+
+    function topupBudget(index) {
+        const topupInput = document.getElementById(`topup-${index}`);
+        const amount = parseFloat(topupInput.value);
+
+        if (isNaN(amount) || amount <= 0) {
+            alert('برجاء إدخال مبلغ صحيح للزيادة.');
+            return;
+        }
+
+        employees[index].budget += amount;
+        localStorage.setItem('employees', JSON.stringify(employees));
+        alert(`تم إضافة ${amount} إلى عُهدة [${employees[index].name}]`);
+        topupInput.value = '';
+        renderData();
+    }
+
+    function viewExpenses(index) {
+        activeModalIndex = index;
+        const emp = employees[index];
+        document.getElementById('modalTitle').innerText = `سجل صرف الموظف: ${emp.name} 📋`;
+        const tbody = document.getElementById('modalTableBody');
+        const tfoot = document.getElementById('modalTableFoot');
+        
+        tbody.innerHTML = '';
+        tfoot.innerHTML = '';
+
+        let totalSpent = 0;
+
+        if(!emp.expenses || emp.expenses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">لم يقم هذا الموظف بتسجيل أي مصروفات بعد.</td></tr>';
+        } else {
+            emp.expenses.forEach(exp => {
+                totalSpent += exp.amount;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><mark style="background:#585b70; color:#f9e2af; padding:2px 6px; border-radius:4px;">${exp.category || 'عام'}</mark></td>
+                        <td>${exp.reason}</td>
+                        <td style="color:#f38ba8; font-weight:bold;">${exp.amount} نقطة</td>
+                        <td><small>${exp.time}</small></td>
+                    </tr>
+                `;
+            });
+
+            tfoot.innerHTML = `
+                <tr class="total-row">
+                    <td colspan="2">إجمالي المبالغ المصروفة:</td>
+                    <td class="total-amount" colspan="2">${totalSpent} نقطة</td>
+                </tr>
+            `;
+        }
+        
+        document.getElementById('excelBtn').onclick = () => exportToCSV(emp);
+        document.getElementById('historyModal').style.display = 'flex';
+    }
+
+    // دالة تصدير البيانات بصيغة إكسيل مبسطة CSV تدعم اللغة العربية
+    function exportToCSV(emp) {
+        if(!emp.expenses || emp.expenses.length === 0) {
+            alert('لا توجد بيانات لتصديرها!');
+            return;
+        }
+        let csvContent = "\uFEFF"; // لدعم اللغة العربية في إكسيل
+        csvContent += "التصنيف,السبب والبيان,المبلغ المصروف,التاريخ والوقت\n";
+        
+        emp.expenses.forEach(exp => {
+            csvContent += `"${exp.category || 'عام'}","${exp.reason}",${exp.amount},"${exp.time}"\n`;
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `سجل_مصروفات_${emp.name}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function closeModal() {
+        document.getElementById('historyModal').style.display = 'none';
+    }
+
+    function deleteEmployee(index) {
+        if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+            employees.splice(index, 1);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            renderData();
+        }
+    }
+
+    function deleteNotification(index) {
+        notifications.splice(index, 1);
+        localStorage.setItem('notifications', JSON.stringify(notifications));
+        renderData();
+    }
+
+    function clearAllNotifications() {
+        if (notifications.length === 0) return;
+        if (confirm('هل أنت متأكد من رغبتك في مسح كل الإشعارات؟')) {
+            notifications = [];
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            renderData();
+        }
+    }
+
+    window.addEventListener('storage', () => {
+        employees = JSON.parse(localStorage.getItem('employees')) || [];
+        notifications = JSON.parse(localStorage.getItem('notifications')) || [];
+        renderData();
+        if(activeModalIndex !== null) viewExpenses(activeModalIndex);
+    });
+
+    renderData();
+</script>
+</body>
+</html>
